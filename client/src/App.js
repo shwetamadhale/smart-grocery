@@ -1,5 +1,5 @@
-import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 import RequireOnboarding from "./components/RequiresOnboarding";
@@ -14,6 +14,7 @@ import Profile from "./pages/Profile";
 
 function App() {
   const location = useLocation();
+  const navigate = useNavigate();
   const noNavbarPaths = ["/login", "/register"];
 
   return (
@@ -28,15 +29,29 @@ function App() {
           path="/preferences"
           element={
             <SignedIn>
-              <Preferences />
+              <Preferences
+                onNext={(data) => {
+                  console.log("Preferences data:", data);
+                  // TODO: Save preferences data to backend or global state here
+                  navigate("/budget");
+                }}
+              />
             </SignedIn>
           }
         />
+
         <Route
           path="/budget"
           element={
             <SignedIn>
-              <Budget />
+              <Budget
+                onBack={() => navigate("/preferences")}
+                onSubmit={(budgetData) => {
+                  console.log("Budget data:", budgetData);
+                  // TODO: Save budget data to backend or global state here
+                  navigate("/dashboard");
+                }}
+              />
             </SignedIn>
           }
         />
