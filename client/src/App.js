@@ -2,6 +2,7 @@ import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
+import RequireOnboarding from "./components/RequiresOnboarding";
 
 import LoginPage from "./pages/LoginPage";
 import Register from "./pages/Register";
@@ -13,18 +14,14 @@ import Profile from "./pages/Profile";
 
 function App() {
   const location = useLocation();
-
-  // Paths where Navbar should NOT show
   const noNavbarPaths = ["/login", "/register"];
 
   return (
     <>
-      {/* Show Navbar only if current path is NOT /login or /register */}
       {!noNavbarPaths.includes(location.pathname) && <Navbar />}
 
       <Routes>
         <Route path="/login/*" element={<LoginPage />} />
-
         <Route path="/register" element={<Register />} />
 
         <Route
@@ -43,24 +40,24 @@ function App() {
             </SignedIn>
           }
         />
+
         <Route
           path="/dashboard"
           element={
-            <>
-              <SignedIn>
+            <SignedIn>
+              <RequireOnboarding>
                 <Dashboard />
-              </SignedIn>
-              <SignedOut>
-                <RedirectToSignIn />
-              </SignedOut>
-            </>
+              </RequireOnboarding>
+            </SignedIn>
           }
         />
         <Route
           path="/analytics"
           element={
             <SignedIn>
-              <Analytics />
+              <RequireOnboarding>
+                <Analytics />
+              </RequireOnboarding>
             </SignedIn>
           }
         />
@@ -68,7 +65,9 @@ function App() {
           path="/profile"
           element={
             <SignedIn>
-              <Profile />
+              <RequireOnboarding>
+                <Profile />
+              </RequireOnboarding>
             </SignedIn>
           }
         />

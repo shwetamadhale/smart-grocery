@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { useUser } from "@clerk/clerk-react";
 
 const Dashboard = () => {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const stockedDays = 7;
 
-  // Sample items, empty array to test "no items" message
+  // Inventory state from your code
   const [items, setItems] = useState([
     {
       id: 1,
@@ -27,11 +27,14 @@ const Dashboard = () => {
     },
   ]);
 
-  // Context menu state
-  const [contextMenu, setContextMenu] = useState(null); // { mouseX, mouseY, itemId }
+  // Context menu state and ref
+  const [contextMenu, setContextMenu] = useState(null);
   const contextMenuRef = useRef(null);
 
-  // Close context menu on click outside
+  // Phase 3: Recommendations state
+  const [recommendations, setRecommendations] = useState([]);
+
+  // Close context menu on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) {
@@ -42,7 +45,31 @@ const Dashboard = () => {
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // Handle right click on a row
+  // Phase 3: Generate recommendations based on user data
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const prefs = user.publicMetadata?.preferences || {};
+    const budget = user.publicMetadata?.budget || {};
+
+    const recs = [];
+
+    if (budget.amount && budget.duration) {
+      recs.push(`👉 Your $${budget.amount} budget is set for ${budget.duration}.`);
+    }
+
+    if (prefs.favoriteCuisines && prefs.favoriteCuisines.length > 0) {
+      recs.push(`Try cooking some delicious ${prefs.favoriteCuisines[0]} dishes this week!`);
+    }
+
+    if (recs.length === 0) {
+      recs.push("No recommendations yet. Set your preferences and budget!");
+    }
+
+    setRecommendations(recs);
+  }, [user, isLoaded]);
+
+  // Context menu handlers
   const handleContextMenu = (event, itemId) => {
     event.preventDefault();
     setContextMenu({
@@ -64,6 +91,8 @@ const Dashboard = () => {
     setContextMenu(null);
   };
 
+  if (!isLoaded) return <div>Loading dashboard...</div>;
+
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
       {/* Header */}
@@ -73,6 +102,24 @@ const Dashboard = () => {
           You are stocked for <strong>{stockedDays} days</strong>
         </p>
       </header>
+
+      {/* Phase 3: Recommendations */}
+      <section
+        style={{
+          marginBottom: "2rem",
+          padding: "1rem",
+          border: "1px solid #ddd",
+          borderRadius: "8px",
+          backgroundColor: "#f9f9f9",
+        }}
+      >
+        <h2>Recommendations</h2>
+        <ul>
+          {recommendations.map((rec, i) => (
+            <li key={i}>{rec}</li>
+          ))}
+        </ul>
+      </section>
 
       {/* Bottom split */}
       <div style={{ display: "flex", height: "60vh" }}>
@@ -93,7 +140,14 @@ const Dashboard = () => {
         </nav>
 
         {/* Right panel */}
-        <main style={{ flex: "3", paddingLeft: "1rem", display: "flex", flexDirection: "column" }}>
+        <main
+          style={{
+            flex: "3",
+            paddingLeft: "1rem",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           {/* Header and Add */}
           <div
             style={{
@@ -104,7 +158,10 @@ const Dashboard = () => {
             }}
           >
             <h2>Here are your items</h2>
-            <button style={addButtonStyle} onClick={() => alert("Add item clicked!")}>
+            <button
+              style={addButtonStyle}
+              onClick={() => alert("Add item clicked!")}
+            >
               + Add
             </button>
           </div>
@@ -125,20 +182,30 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {items.map(({ id, name, category, price, quantity, useBy, usageFrequency }) => (
-                  <tr
-                    key={id}
-                    style={{ borderBottom: "1px solid #ddd", cursor: "context-menu" }}
-                    onContextMenu={(e) => handleContextMenu(e, id)}
-                  >
-                    <td style={thTdStyle}>{name}</td>
-                    <td style={thTdStyle}>{category}</td>
-                    <td style={thTdStyle}>{price}</td>
-                    <td style={thTdStyle}>{quantity}</td>
-                    <td style={thTdStyle}>{useBy}</td>
-                    <td style={thTdStyle}>{usageFrequency}</td>
-                  </tr>
-                ))}
+                {items.map(
+                  ({
+                    id,
+                    name,
+                    category,
+                    price,
+                    quantity,
+                    useBy,
+                    usageFrequency,
+                  }) => (
+                    <tr
+                      key={id}
+                      style={{ borderBottom: "1px solid #ddd", cursor: "context-menu" }}
+                      onContextMenu={(e) => handleContextMenu(e, id)}
+                    >
+                      <td style={thTdStyle}>{name}</td>
+                      <td style={thTdStyle}>{category}</td>
+                      <td style={thTdStyle}>{price}</td>
+                      <td style={thTdStyle}>{quantity}</td>
+                      <td style={thTdStyle}>{useBy}</td>
+                      <td style={thTdStyle}>{usageFrequency}</td>
+                    </tr>
+                  )
+                )}
               </tbody>
             </table>
           )}

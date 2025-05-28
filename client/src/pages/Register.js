@@ -1,4 +1,3 @@
-// client/src/pages/Register.js
 import { SignUp } from "@clerk/clerk-react";
 
 const Register = () => {
